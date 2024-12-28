@@ -15,17 +15,10 @@
  */
 package com.yourorg
 
-import com.yourorg.table.MicroscopeReport
-import org.apache.jena.ontapi.common.OntVocabulary.RDFS
-import org.apache.jena.ontapi.model.OntStatement
-import org.apache.jena.vocabulary.RDF
-import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.openrewrite.java.JavaParser
 import org.openrewrite.test.RecipeSpec
 import org.openrewrite.test.RewriteTest
-import org.openrewrite.test.UncheckedConsumer
-import java.util.function.Consumer
 
 internal class MicroscopeTest : RewriteTest {
     override fun defaults(spec: RecipeSpec) {
