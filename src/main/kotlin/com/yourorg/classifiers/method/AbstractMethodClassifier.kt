@@ -6,6 +6,10 @@ import org.openrewrite.Cursor
 import org.openrewrite.java.tree.J
 
 abstract class AbstractMethodClassifier(val model: OntModel) {
+    init {
+        addToTBox()
+    }
+
     abstract fun addToTBox()
 
     abstract fun classify(
