@@ -27,6 +27,6 @@ class EventHandlerMethodClassifier(model: OntModel) : AbstractMethodClassifier(m
         cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
     ): Boolean {
-        TODO("Not yet implemented")
+        return false // not yet implemented
     }
 }
