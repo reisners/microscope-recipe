@@ -1,10 +1,6 @@
 package com.yourorg
 
-/***
- * Source:
- * https://stackoverflow.com/questions/40230276/how-to-make-a-type-5-uuid-in-java
- */
-
+/** Source: https://stackoverflow.com/questions/40230276/how-to-make-a-type-5-uuid-in-java */
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.UUID
@@ -32,8 +28,10 @@ enum class Namespace(private val uuid: UUID) {
         md.update(toBytes(this.uuid))
         md.update(name.toByteArray())
         val bytes = md.digest()
-        bytes[6] = ((bytes[6].toInt() and 0x0F) or 0x50).toByte() /* clear version; set to version 5 */
-        bytes[8] = ((bytes[8].toInt() and 0x3F) or 0x80).toByte() /* clear variant; set to IETF variant */
+        bytes[6] =
+            ((bytes[6].toInt() and 0x0F) or 0x50).toByte() /* clear version; set to version 5 */
+        bytes[8] =
+            ((bytes[8].toInt() and 0x3F) or 0x80).toByte() /* clear variant; set to IETF variant */
         return fromBytes(bytes)
     }
 
@@ -43,10 +41,8 @@ enum class Namespace(private val uuid: UUID) {
             assert(data.size >= 16)
             var msb = 0L
             var lsb = 0L
-            for (i in 0..7)
-                msb = msb shl 8 or (data[i].toLong() and 0xff)
-            for (i in 8..15)
-                lsb = lsb shl 8 or (data[i].toLong() and 0xff)
+            for (i in 0..7) msb = msb shl 8 or (data[i].toLong() and 0xff)
+            for (i in 8..15) lsb = lsb shl 8 or (data[i].toLong() and 0xff)
             return UUID(msb, lsb)
         }
 
@@ -55,20 +51,18 @@ enum class Namespace(private val uuid: UUID) {
             val out = ByteArray(16)
             val msb = uuid.mostSignificantBits
             val lsb = uuid.leastSignificantBits
-            for (i in 0..7)
-                out[i] = (msb shr (7 - i) * 8 and 0xff).toByte()
-            for (i in 8..15)
-                out[i] = (lsb shr (15 - i) * 8 and 0xff).toByte()
+            for (i in 0..7) out[i] = (msb shr (7 - i) * 8 and 0xff).toByte()
+            for (i in 8..15) out[i] = (lsb shr (15 - i) * 8 and 0xff).toByte()
             return out
         }
     }
 }
 
-
 fun uuid3(ns: Namespace, name: String): UUID = ns.uuid3(name)
-fun uuid4(): UUID = UUID.randomUUID()
-fun uuid5(ns: Namespace, name: String): UUID = ns.uuid5(name)
 
+fun uuid4(): UUID = UUID.randomUUID()
+
+fun uuid5(ns: Namespace, name: String): UUID = ns.uuid5(name)
 
 fun main() {
     val url = "http://www.whatever.com/test/"

@@ -22,8 +22,12 @@ import org.openrewrite.test.RewriteTest
 
 internal class MicroscopeTest : RewriteTest {
     override fun defaults(spec: RecipeSpec) {
-        spec.recipe(Microscope("/tmp/model.ttl"))
-            .parser(JavaParser.fromJavaVersion().classpath("spring-core", "spring-web", "spring-context"))
+        spec
+            .recipe(Microscope("/tmp/model.ttl"))
+            .parser(
+                JavaParser.fromJavaVersion()
+                    .classpath("spring-core", "spring-web", "spring-context")
+            )
     }
 
     @Test
@@ -41,7 +45,8 @@ internal class MicroscopeTest : RewriteTest {
                   }
               }
               
-              """.trimIndent()
+              """
+                    .trimIndent()
             )
         )
     }
@@ -79,7 +84,8 @@ internal class MicroscopeTest : RewriteTest {
                     fun deleteAll()
                 }
               
-              """.trimIndent()
+              """
+                    .trimIndent()
             )
         )
     }

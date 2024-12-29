@@ -5,27 +5,32 @@ import org.openrewrite.java.tree.J
 import org.openrewrite.kotlin.tree.K
 
 fun List<J.Annotation>.asMapOfMaps(): Map<String, Map<String, Array<Any>>> {
-    return this.associate { it: J.Annotation -> it.getSimpleName() to (it.getArguments()?.asMap() ?: emptyMap()) }
+    return this.associate { it: J.Annotation ->
+        it.getSimpleName() to (it.getArguments()?.asMap() ?: emptyMap())
+    }
 }
 
 fun List<Expression>.asMap(): Map<String, Array<Any>> {
     return this.mapNotNull { expression ->
-        when (expression) {
-            is J.Literal -> "value" to expression.extractValue()!!
-            is J.Assignment -> expression.let {
-                it.variable.toString() to it.getAssignment().extractValue()!!
-            }
+            when (expression) {
+                is J.Literal -> "value" to expression.extractValue()!!
+                is J.Assignment ->
+                    expression.let { it.variable.toString() to it.getAssignment().extractValue()!! }
 
-            is K.ListLiteral -> "value" to expression.extractValue()!!
-            else -> null
+                is K.ListLiteral -> "value" to expression.extractValue()!!
+                else -> null
+            }
         }
-    }.toMap()
+        .toMap()
 }
 
 fun Expression.extractValue(): Array<Any>? {
     return when (this) {
         is J.Literal -> arrayOf(this.value)
-        is K.ListLiteral -> this.elements.mapNotNull { expression -> (expression as J.Literal).value }.toTypedArray()
+        is K.ListLiteral ->
+            this.elements
+                .mapNotNull { expression -> (expression as J.Literal).value }
+                .toTypedArray()
         is J.FieldAccess -> this.name.extractValue()
         is J.Identifier -> arrayOf(this.simpleName)
         else -> null

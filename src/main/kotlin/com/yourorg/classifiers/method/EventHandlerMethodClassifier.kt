@@ -17,9 +17,7 @@ class EventHandlerMethodClassifier(model: OntModel) : AbstractMethodClassifier(m
         model.createOntClass(CLASS_METHOD).also { method ->
             model.createObjectProperty(PROPERTY_HAS_TOPIC).also {
                 it.addDomain(method)
-                it.addRange(
-                    model.createOntClass(CLASS_TOPIC)
-                )
+                it.addRange(model.createOntClass(CLASS_TOPIC))
             }
         }
     }
@@ -27,7 +25,7 @@ class EventHandlerMethodClassifier(model: OntModel) : AbstractMethodClassifier(m
     override fun classify(
         individualMethod: OntIndividual,
         cursor: Cursor,
-        jMethodDeclaration: J.MethodDeclaration
+        jMethodDeclaration: J.MethodDeclaration,
     ): Boolean {
         TODO("Not yet implemented")
     }

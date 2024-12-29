@@ -7,5 +7,10 @@ import org.openrewrite.java.tree.J
 
 abstract class AbstractMethodClassifier(val model: OntModel) {
     abstract fun addToTBox()
-    abstract fun classify(individualMethod: OntIndividual, cursor: Cursor, jMethodDeclaration: J.MethodDeclaration): Boolean
+
+    abstract fun classify(
+        individualMethod: OntIndividual,
+        cursor: Cursor,
+        jMethodDeclaration: J.MethodDeclaration,
+    ): Boolean
 }

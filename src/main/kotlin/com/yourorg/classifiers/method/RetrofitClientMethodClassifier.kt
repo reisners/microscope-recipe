@@ -38,7 +38,7 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
     override fun classify(
         individualMethod: OntIndividual,
         cursor: Cursor,
-        jMethodDeclaration: J.MethodDeclaration
+        jMethodDeclaration: J.MethodDeclaration,
     ): Boolean {
         val model = individualMethod.model
         val methodAnnotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
@@ -46,29 +46,43 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
             return false
         }
         val pathsAndMethods = extractPathsAndMethods(methodAnnotations)
-        val requestMappingMethodLevel = pathsAndMethods.first.map { any -> any as String }.toTypedArray()
+        val requestMappingMethodLevel =
+            pathsAndMethods.first.map { any -> any as String }.toTypedArray()
         val httpMethods = pathsAndMethods.second
         httpMethods.forEach { httpMethod ->
-            val individualEndpoint = model.createIndividual(createABoxURI(httpMethod, *requestMappingMethodLevel), model.getOntClass(CLASS_RETROFIT_CLIENT)).also {
-                it.addProperty(model.getDataProperty(PROPERTY_HAS_HTTP_METHOD), httpMethod)
-                requestMappingMethodLevel.forEach { path -> it.addProperty(model.getDataProperty(PROPERTY_HAS_PATH), path) }
-            }
-            individualMethod.addProperty(model.getObjectProperty(PROPERTY_IS_RETROFIT_CLIENT), individualEndpoint)
+            val individualEndpoint =
+                model
+                    .createIndividual(
+                        createABoxURI(httpMethod, *requestMappingMethodLevel),
+                        model.getOntClass(CLASS_RETROFIT_CLIENT),
+                    )
+                    .also {
+                        it.addProperty(model.getDataProperty(PROPERTY_HAS_HTTP_METHOD), httpMethod)
+                        requestMappingMethodLevel.forEach { path ->
+                            it.addProperty(model.getDataProperty(PROPERTY_HAS_PATH), path)
+                        }
+                    }
+            individualMethod.addProperty(
+                model.getObjectProperty(PROPERTY_IS_RETROFIT_CLIENT),
+                individualEndpoint,
+            )
         }
         return true
     }
 
-    private fun extractPathsAndMethods(annotationsAsMap: Map<String, Map<String, Array<Any>>>): Pair<Array<Any>, Set<String>> {
-        return annotationsAsMap.keys.map { annotation ->
-            when (annotation) {
-                "GET" -> annotationsAsMap[annotation]!!["value"]!! to setOf("GET")
-                "PUT" -> annotationsAsMap[annotation]!!["value"]!! to setOf("PUT")
-                "POST" -> annotationsAsMap[annotation]!!["value"]!! to setOf("POST")
-                "DELETE" -> annotationsAsMap[annotation]!!["value"]!! to setOf("DELETE")
-                else -> throw IllegalArgumentException(annotation)
+    private fun extractPathsAndMethods(
+        annotationsAsMap: Map<String, Map<String, Array<Any>>>
+    ): Pair<Array<Any>, Set<String>> {
+        return annotationsAsMap.keys
+            .map { annotation ->
+                when (annotation) {
+                    "GET" -> annotationsAsMap[annotation]!!["value"]!! to setOf("GET")
+                    "PUT" -> annotationsAsMap[annotation]!!["value"]!! to setOf("PUT")
+                    "POST" -> annotationsAsMap[annotation]!!["value"]!! to setOf("POST")
+                    "DELETE" -> annotationsAsMap[annotation]!!["value"]!! to setOf("DELETE")
+                    else -> throw IllegalArgumentException(annotation)
+                }
             }
-        }
-        .first()
+            .first()
     }
-
 }
