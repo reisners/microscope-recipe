@@ -23,20 +23,14 @@ import lombok.Value;
 import org.apache.jena.ontapi.model.OntIndividual;
 import org.jetbrains.annotations.NotNull;
 import org.openrewrite.*;
-import org.openrewrite.binary.Binary;
-import org.openrewrite.binary.BinaryParser;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.kotlin.KotlinIsoVisitor;
 import org.openrewrite.kotlin.tree.K;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Value
 @EqualsAndHashCode(callSuper = false)
