@@ -74,8 +74,8 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
     }
 
     private fun extractPathsAndMethods(
-        annotationsAsMap: Map<String, Map<String, Array<Any>>>
-    ): Pair<Array<Any>, Set<String>>? {
+        annotationsAsMap: Map<String, Map<String, Array<Any?>>>
+    ): Pair<Array<Any?>, Set<String>>? {
         return annotationsAsMap.keys.firstNotNullOfOrNull { annotation ->
             when (annotation) {
                 "retrofit2.http.GET" -> annotationsAsMap[annotation]!!["value"]!! to setOf("GET")

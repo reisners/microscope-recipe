@@ -86,8 +86,8 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
     }
 
     private fun extractPathsAndMethods(
-        annotationsAsMap: Map<String, Map<String, Array<Any>>>
-    ): Pair<Array<Any>, Set<String>> {
+        annotationsAsMap: Map<String, Map<String, Array<Any?>>>
+    ): Pair<Array<Any?>, Set<String>> {
         return annotationsAsMap.keys
             .map { annotation ->
                 when (annotation) {
