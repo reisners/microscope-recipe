@@ -32,19 +32,19 @@ internal class MicroscopeTest : RewriteTest {
 
     @Test
     fun basic() {
+        Math.abs(-1)
         rewriteRun(
             org.openrewrite.kotlin.Assertions.kotlin(
                 """
-              class A(val b: B) {
-                  fun x() = b.y()
-              }
-              
-              class B {
-                  fun y() {
-                      println("hello world")
-                  }
-              }
-              
+                    class A(val b: B) {
+                      fun x() = b.y()
+                    }
+                    
+                    class B {
+                      fun y() {
+                          Math.abs(-1)
+                      }
+                    }              
               """
                     .trimIndent()
             )
