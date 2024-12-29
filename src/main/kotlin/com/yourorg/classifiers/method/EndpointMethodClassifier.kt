@@ -44,11 +44,11 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
         val model = individualMethod.model
         val jClassDeclaration = cursor.firstEnclosing(J.ClassDeclaration::class.java)!!
         val classAnnotations = jClassDeclaration.leadingAnnotations.asMapOfMaps()
-        if (!classAnnotations.containsKey("RequestMapping")) {
+        if (!classAnnotations.containsKey("org.springframework.web.bind.annotation.RestController")) {
             return false
         }
         val requestMappingClassLevel =
-            classAnnotations["RequestMapping"]!!["value"]
+            classAnnotations["org.springframework.web.bind.annotation.RequestMapping"]!!["value"]
                 ?.map { any -> any as String }
                 ?.toTypedArray()
         val methodAnnotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
@@ -91,16 +91,16 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
         return annotationsAsMap.keys
             .map { annotation ->
                 when (annotation) {
-                    "RequestMapping" ->
+                    "org.springframework.web.bind.annotation.RequestMapping" ->
                         annotationsAsMap[annotation]!!.get("value")!! to
                             (annotationsAsMap[annotation]
                                 ?.get("method")
                                 ?.map { any -> any as String }
                                 ?.toSet() ?: emptySet())
-                    "GetMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("GET")
-                    "PutMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("PUT")
-                    "PostMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("POST")
-                    "DeleteMapping" ->
+                    "org.springframework.web.bind.annotation.GetMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("GET")
+                    "org.springframework.web.bind.annotation.PutMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("PUT")
+                    "org.springframework.web.bind.annotation.PostMapping" -> annotationsAsMap[annotation]!!.get("value")!! to setOf("POST")
+                    "org.springframework.web.bind.annotation.DeleteMapping" ->
                         annotationsAsMap[annotation]!!.get("value")!! to setOf("DELETE")
                     else -> throw IllegalArgumentException(annotation)
                 }

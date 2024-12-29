@@ -6,7 +6,7 @@ import org.openrewrite.kotlin.tree.K
 
 fun List<J.Annotation>.asMapOfMaps(): Map<String, Map<String, Array<Any>>> {
     return this.associate { it: J.Annotation ->
-        it.getSimpleName() to (it.getArguments()?.asMap() ?: emptyMap())
+        it.annotationType.toString() to (it.getArguments()?.asMap() ?: emptyMap())
     }
 }
 
