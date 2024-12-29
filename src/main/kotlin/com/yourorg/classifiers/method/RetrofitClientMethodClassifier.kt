@@ -46,6 +46,9 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
             return false
         }
         val pathsAndMethods = extractPathsAndMethods(methodAnnotations)
+        if (pathsAndMethods == null) {
+            return false
+        }
         val requestMappingMethodLevel =
             pathsAndMethods.first.map { any -> any as String }.toTypedArray()
         val httpMethods = pathsAndMethods.second
@@ -72,17 +75,17 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
 
     private fun extractPathsAndMethods(
         annotationsAsMap: Map<String, Map<String, Array<Any>>>
-    ): Pair<Array<Any>, Set<String>> {
-        return annotationsAsMap.keys
-            .map { annotation ->
-                when (annotation) {
-                    "GET" -> annotationsAsMap[annotation]!!["value"]!! to setOf("GET")
-                    "PUT" -> annotationsAsMap[annotation]!!["value"]!! to setOf("PUT")
-                    "POST" -> annotationsAsMap[annotation]!!["value"]!! to setOf("POST")
-                    "DELETE" -> annotationsAsMap[annotation]!!["value"]!! to setOf("DELETE")
-                    else -> throw IllegalArgumentException(annotation)
-                }
+    ): Pair<Array<Any>, Set<String>>? {
+        return annotationsAsMap.keys.firstNotNullOfOrNull { annotation ->
+            when (annotation) {
+                "retrofit2.http.GET" -> annotationsAsMap[annotation]!!["value"]!! to setOf("GET")
+                "retrofit2.http.PUT" -> annotationsAsMap[annotation]!!["value"]!! to setOf("PUT")
+                "retrofit2.http.POST" -> annotationsAsMap[annotation]!!["value"]!! to setOf("POST")
+                "retrofit2.http.DELETE" -> annotationsAsMap[annotation]!!["value"]!! to setOf("DELETE")
+                "retrofit2.http.HEAD" -> annotationsAsMap[annotation]!!["value"]!! to setOf("HEAD")
+                "retrofit2.http.PATCH" -> annotationsAsMap[annotation]!!["value"]!! to setOf("PATCH")
+                else -> null
             }
-            .first()
+        }
     }
 }
