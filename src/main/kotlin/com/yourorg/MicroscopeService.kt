@@ -91,7 +91,7 @@ class MicroscopeService {
         val declaringTypeName: String? =
             methodInvocation.methodType?.declaringType?.fullyQualifiedName
         val relevantReceiverType = declaringTypeName?.startsWith("kotlin.") == false
-        if (methodInvocation.methodType != null && relevantReceiverType) {
+        if (methodInvocation.methodType != null && relevantReceiverType && declaringTypeName != null) {
             val invokedMethodName = methodInvocation.name.toString()
             val individualCallee =
                 model.createIndividual(
