@@ -20,6 +20,8 @@ import org.openrewrite.java.JavaParser
 import org.openrewrite.kotlin.KotlinParser
 import org.openrewrite.test.RecipeSpec
 import org.openrewrite.test.RewriteTest
+import kotlin.io.path.Path
+import kotlin.random.Random
 
 internal class MicroscopeTest : RewriteTest {
     override fun defaults(spec: RecipeSpec) {
@@ -33,7 +35,6 @@ internal class MicroscopeTest : RewriteTest {
 
     @Test
     fun basic() {
-        Math.abs(-1)
         rewriteRun(
             org.openrewrite.kotlin.Assertions.kotlin(
                 """
@@ -46,6 +47,21 @@ internal class MicroscopeTest : RewriteTest {
                           Math.abs(-1)
                       }
                     }              
+              """
+                    .trimIndent()
+            )
+        )
+    }
+
+    @Test
+    fun constructorInvocation() {
+        rewriteRun(
+                    org.openrewrite.kotlin.Assertions.kotlin(
+                """
+                class A(val x: String)
+                val a = A("x")
+                val bc = org.springframework.util.comparator.BooleanComparator(false) // this requires spring-core being on the classpath
+                val pair = kotlin.Pair(1, "y") // currently, rewrite-kotlin only supports kotlin 1.9; this line breaks if kotlin 2.1 is on the classpath
               """
                     .trimIndent()
             )
@@ -90,4 +106,68 @@ internal class MicroscopeTest : RewriteTest {
             )
         )
     }
+
+    @Test
+    fun springBeanProperties() {
+        rewriteRun(
+            org.openrewrite.kotlin.Assertions.kotlin(
+                """
+                package com.yourorg
+                
+                @org.springframework.context.annotation.Configuration
+                open class SqsConfiguration {
+                
+                    val x = com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration(enabled = true, queueUrl = "xUrl", waitTimeInSeconds = 10)
+
+                    @org.springframework.context.annotation.Bean(value = ["firstEventConfig"])
+                    open fun firstEventConfiguration(@org.springframework.beans.factory.annotation.Value("\${'$'}{sqs.receiver.first-events.queue}") queueUrl: String): com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration = com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration(enabled = true, queueUrl = queueUrl, waitTimeInSeconds = 10)
+    
+                    @org.springframework.context.annotation.Bean(value = ["secondEventConfig"])
+                    open fun secondEventConfiguration(@org.springframework.beans.factory.annotation.Value("\${'$'}{sqs.receiver.second-events.queue}") queueUrl: String) =
+                        com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration(enabled = true, queueUrl = queueUrl, waitTimeInSeconds = 10)
+                }              
+              """
+                    .trimIndent()
+            )
+        )
+    }
+
+    @Test
+    fun eventHandler() {
+        rewriteRun(
+            org.openrewrite.kotlin.Assertions.kotlin(
+                """
+                package com.yourorg
+                
+                @Component
+                class MyEventHandler(
+                    sqsClient: SqsClient,
+                    objectMapper: ObjectMapper,
+                    @Qualifier("myEventConfig")
+                    configuration: EventProcessorConfiguration,
+                    myService: MyService
+                ) {
+                    private val processor =
+                        EventProcessor(
+                            sqsClient = sqsClient,
+                            configuration = configuration,
+                            objectMapper = objectMapper,
+                            eventReference = jacksonTypeRef<MyEvent>(),
+                            handleEvent = ::handleEvent,
+                        )
+                
+                    fun handleEvent(event: MyEvent) {
+                        myService.doX()
+                    }
+                }
+                
+                typealias MyEvent = com.borrowbox.gearbox.events.CommonBaseEvent<com.borrowbox.gearbox.events.EventMeta, String>
+
+              
+              """
+                    .trimIndent()
+            )
+        )
+    }
+
 }
