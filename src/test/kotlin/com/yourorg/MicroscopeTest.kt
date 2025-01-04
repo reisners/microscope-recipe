@@ -17,6 +17,7 @@ package com.yourorg
 
 import org.junit.jupiter.api.Test
 import org.openrewrite.java.JavaParser
+import org.openrewrite.kotlin.KotlinParser
 import org.openrewrite.test.RecipeSpec
 import org.openrewrite.test.RewriteTest
 
@@ -25,7 +26,7 @@ internal class MicroscopeTest : RewriteTest {
         spec
             .recipe(Microscope("/tmp/model.ttl"))
             .parser(
-                JavaParser.fromJavaVersion()
+                KotlinParser.Builder()
                     .classpath("spring-core", "spring-web", "spring-context")
             )
     }
