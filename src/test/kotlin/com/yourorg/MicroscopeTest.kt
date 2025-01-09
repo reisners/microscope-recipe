@@ -15,22 +15,54 @@
  */
 package com.yourorg
 
+import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
+import com.yourorg.MicroscopeService.Companion.PROPERTY_HAS_FQCN
+import com.yourorg.MicroscopeService.Companion.PROPERTY_HAS_METHOD_NAME
+import org.apache.jena.ontapi.OntModelFactory
+import org.apache.jena.ontapi.OntSpecification
+import org.apache.jena.ontapi.model.OntClass
+import org.apache.jena.ontapi.model.OntDataProperty
+import org.apache.jena.ontapi.model.OntModel
+import org.apache.jena.rdf.model.Literal
+import org.apache.jena.rdf.model.Resource
+import org.apache.jena.util.iterator.ExtendedIterator
+import org.apache.jena.vocabulary.RDF
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.openrewrite.java.JavaParser
 import org.openrewrite.kotlin.KotlinParser
 import org.openrewrite.test.RecipeSpec
 import org.openrewrite.test.RewriteTest
-import kotlin.io.path.Path
-import kotlin.random.Random
+import java.io.FileInputStream
+import java.util.*
 
 internal class MicroscopeTest : RewriteTest {
+    val modelFilename = "/tmp/model-${UUID.randomUUID()}.ttl"
+
     override fun defaults(spec: RecipeSpec) {
         spec
-            .recipe(Microscope("/tmp/model.ttl"))
+            .recipe(Microscope(modelFilename))
             .parser(
                 KotlinParser.Builder()
-                    .classpath("spring-core", "spring-web", "spring-context")
+                    .classpath(
+                        "spring-core",
+                        "spring-web",
+                        "spring-context",
+                        "gearbox-commons",
+                        "gearbox-events",
+                        "gearbox-retrofit-core",
+                        "gearbox-sqs-eventprocessor",
+                        "sqs",
+                        "jackson-databind",
+                        "jackson-core",
+                        "jackson-module-kotlin",
+                    )
             )
+    }
+
+    fun readModel(): OntModel = OntModelFactory.createModel(OntSpecification.OWL1_DL_MEM_RDFS_INF).apply {
+        FileInputStream(this@MicroscopeTest.modelFilename).use {
+            read(it, null, "TTL");
+        }
     }
 
     @Test
@@ -51,6 +83,12 @@ internal class MicroscopeTest : RewriteTest {
                     .trimIndent()
             )
         )
+        val model = readModel()
+        val propertyMethodName = model.getDataProperty(PROPERTY_HAS_METHOD_NAME)
+        val propertyClassName = model.getDataProperty(PROPERTY_HAS_FQCN)
+        val individualMethods = model.listIndividualsWithClass(model.getOntClass(CLASS_METHOD)).filterKeep { it.hasProperty(propertyMethodName) }.toList()
+        assertThat(individualMethods).hasSize(2)
+        assertThat(individualMethods.extractDataProperty(model.getDataProperty(PROPERTY_HAS_METHOD_NAME)).mapNotNull { it?.value as String }.toSet()).isEqualTo(setOf("x", "y"))
     }
 
     @Test
@@ -82,13 +120,13 @@ internal class MicroscopeTest : RewriteTest {
                     fun x(): List<MyEntity> = myService.doX()
 
                     @org.springframework.web.bind.annotation.DeleteMapping("/x")
-                    fun deleteX() = myService.deleteX()
+                    fun deleteX() = myService.doDeleteX()
                 }
                 
                 @org.springframework.stereotype.Service
                 class MyService(val myRepository: MyRepository) {
                     fun doX(): List<MyEntity> = myRepository.findAll()
-                    fun deleteX() = myRepository.deleteAll()
+                    fun doDeleteX() = myRepository.deleteAll()
                 }
                 
                 class MyEntity(
@@ -105,6 +143,18 @@ internal class MicroscopeTest : RewriteTest {
                     .trimIndent()
             )
         )
+        val model = readModel()
+        val propertyMethodName = model.getDataProperty(PROPERTY_HAS_METHOD_NAME)
+        val propertyClassName = model.getDataProperty(PROPERTY_HAS_FQCN)
+        val individualMethods = model.listIndividualsWithClass(model.getOntClass(CLASS_METHOD)).filterKeep { it.hasProperty(propertyMethodName) }.toList()
+        assertThat(individualMethods).hasSize(4)
+        assertThat(individualMethods.map { "${it.getProperty(propertyClassName)?.`object`?.asLiteral()}.${it.getProperty(propertyMethodName)?.`object`?.asLiteral()}" }.toSet())
+            .isEqualTo(setOf(
+                "com.yourorg.MyController.x",
+                "com.yourorg.MyController.deleteX",
+                "com.yourorg.MyService.doX",
+                "com.yourorg.MyService.doDeleteX"
+            ))
     }
 
     @Test
@@ -133,27 +183,60 @@ internal class MicroscopeTest : RewriteTest {
     }
 
     @Test
+    fun constructorParameterAnnotation() {
+        rewriteRun(
+            org.openrewrite.kotlin.Assertions.kotlin(
+                """
+                package com.yourorg
+                
+                class MyEventHandler(
+                    sqsClient: software.amazon.awssdk.services.sqs.SqsClient,
+                    objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+                    @org.springframework.beans.factory.annotation.Qualifier("myEventConfig")
+                    configuration: com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration,
+                    val myService: MyService
+                )
+
+                class MyService
+              """
+                    .trimIndent()
+            )
+        )
+    }
+
+    @Test
     fun eventHandler() {
         rewriteRun(
             org.openrewrite.kotlin.Assertions.kotlin(
                 """
                 package com.yourorg
                 
-                @Component
+                data class MyEventContent(val s: String)
+
+                typealias MyEvent = com.borrowbox.gearbox.events.CommonBaseEvent<com.borrowbox.gearbox.events.EventMeta, MyEventContent>
+
+                @org.springframework.context.annotation.Configuration
+                class MyConfiguration {
+                    @org.springframework.context.annotation.Bean(value = ["myEventConfig"])
+                    fun myEventConfiguration() =
+                        com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration(enabled = true, queueUrl = "myQueueUrl", waitTimeInSeconds = 10)                
+                }
+
+                @org.springframework.stereotype.Component
                 class MyEventHandler(
-                    sqsClient: SqsClient,
-                    objectMapper: ObjectMapper,
-                    @Qualifier("myEventConfig")
-                    configuration: EventProcessorConfiguration,
-                    myService: MyService
+                    sqsClient: software.amazon.awssdk.services.sqs.SqsClient,
+                    objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+                    @org.springframework.beans.factory.annotation.Qualifier("myEventConfig")
+                    configuration: com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration,
+                    val myService: MyService
                 ) {
-                    private val processor =
-                        EventProcessor(
+                                private val processor =
+                        com.borrowbox.gearbox.sqs.eventprocessor.processor.EventProcessor(
                             sqsClient = sqsClient,
                             configuration = configuration,
                             objectMapper = objectMapper,
-                            eventReference = jacksonTypeRef<MyEvent>(),
-                            handleEvent = ::handleEvent,
+                            eventReference = com.fasterxml.jackson.module.kotlin.jacksonTypeRef<MyEvent>(),
+                            handleEvent = this::handleEvent,
                         )
                 
                     fun handleEvent(event: MyEvent) {
@@ -161,9 +244,10 @@ internal class MicroscopeTest : RewriteTest {
                     }
                 }
                 
-                typealias MyEvent = com.borrowbox.gearbox.events.CommonBaseEvent<com.borrowbox.gearbox.events.EventMeta, String>
-
-              
+                @org.springframework.stereotype.Service
+                class MyService {
+                    fun doX() {}
+                }
               """
                     .trimIndent()
             )
@@ -171,3 +255,11 @@ internal class MicroscopeTest : RewriteTest {
     }
 
 }
+
+private fun List<Resource>.extractDataProperty(dataProperty: OntDataProperty?): List<Literal?> =
+    this.mapNotNull { it.getProperty(dataProperty)?.`object` }
+        .filter { it.isLiteral }
+        .map { it.asLiteral() }
+
+private fun OntModel.listIndividualsWithClass(classMethod: OntClass.Named?): ExtendedIterator<Resource> =
+    listSubjects().filterKeep { it.hasProperty(RDF.type, classMethod) }
