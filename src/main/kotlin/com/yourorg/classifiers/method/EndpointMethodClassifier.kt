@@ -5,17 +5,18 @@ import com.yourorg.MicroscopeService.Companion.NS_TBOX
 import com.yourorg.MicroscopeService.Companion.createABoxURI
 import com.yourorg.MicroscopeService.Companion.productOf
 import com.yourorg.asMapOfMaps
-import org.apache.jena.ontapi.model.OntIndividual
+import com.yourorg.createIndividualMethod
 import org.apache.jena.ontapi.model.OntModel
-import org.openrewrite.Cursor
+import org.openrewrite.ExecutionContext
+import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
 
 class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model) {
     companion object {
-        val PROPERTY_HAS_ENDPOINT = "$NS_TBOX#hasEndpoint"
-        val CLASS_ENDPOINT = "$NS_TBOX#Endpoint"
-        val PROPERTY_HAS_PATH = "$NS_TBOX#hasPath"
-        val PROPERTY_HAS_HTTP_METHOD = "$NS_TBOX#hasHttpMethod"
+        val PROPERTY_HAS_ENDPOINT = "${NS_TBOX}hasEndpoint"
+        val CLASS_ENDPOINT = "${NS_TBOX}Endpoint"
+        val PROPERTY_HAS_PATH = "${NS_TBOX}hasPath"
+        val PROPERTY_HAS_HTTP_METHOD = "${NS_TBOX}hasHttpMethod"
     }
 
     override fun addToTBox() {
@@ -37,11 +38,10 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
     }
 
     override fun classify(
-        individualMethod: OntIndividual,
-        cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
+        visitor: JavaVisitor<ExecutionContext>,
     ): Boolean {
-        val model = individualMethod.model
+        val cursor = visitor.cursor
         val jClassDeclaration = cursor.firstEnclosing(J.ClassDeclaration::class.java)!!
         val classAnnotations = jClassDeclaration.leadingAnnotations.asMapOfMaps()
         if (!classAnnotations.containsKey("org.springframework.web.bind.annotation.RestController")) {
@@ -59,16 +59,26 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
         val requestMappingMethodLevel =
             pathsAndMethods.first.map { any -> any as String }.toTypedArray()
         val httpMethods = pathsAndMethods.second
+        if (httpMethods.isEmpty()) {
+            return false
+        }
+        val callerMethodType = jMethodDeclaration.methodType
+        if (callerMethodType == null) {
+            return false
+        }
+        val individualMethod = model.createIndividualMethod(callerMethodType)
+        val classEndpoint = model.getOntClass(CLASS_ENDPOINT)
         httpMethods.forEach { httpMethod ->
             val individualEndpoint =
                 model
                     .createIndividual(
                         createABoxURI(
+                            classEndpoint,
                             httpMethod,
                             *requestMappingClassLevel ?: emptyArray(),
                             *requestMappingMethodLevel,
                         ),
-                        model.getOntClass(CLASS_ENDPOINT),
+                        classEndpoint,
                     )
                     .also {
                         it.addProperty(model.getDataProperty(PROPERTY_HAS_HTTP_METHOD), httpMethod)
@@ -86,7 +96,7 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
     }
 
     private fun extractPathsAndMethods(
-        annotationsAsMap: Map<String, Map<String, Array<Any?>>>
+        annotationsAsMap: Map<String, Map<String, Array<Any?>?>>
     ): Pair<Array<Any?>, Set<String>> {
         return annotationsAsMap.keys
             .map { annotation ->

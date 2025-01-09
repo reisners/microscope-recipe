@@ -4,17 +4,18 @@ import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.NS_TBOX
 import com.yourorg.MicroscopeService.Companion.createABoxURI
 import com.yourorg.asMapOfMaps
-import org.apache.jena.ontapi.model.OntIndividual
+import com.yourorg.createIndividualMethod
 import org.apache.jena.ontapi.model.OntModel
-import org.openrewrite.Cursor
+import org.openrewrite.ExecutionContext
+import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
 
 class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier(model) {
     companion object {
-        val PROPERTY_IS_RETROFIT_CLIENT = "$NS_TBOX#isRetrofitClient"
-        val CLASS_RETROFIT_CLIENT = "$NS_TBOX#RetrofitClient"
-        val PROPERTY_HAS_PATH = "$NS_TBOX#hasPath"
-        val PROPERTY_HAS_HTTP_METHOD = "$NS_TBOX#hasHttpMethod"
+        val PROPERTY_IS_RETROFIT_CLIENT = "${NS_TBOX}isRetrofitClient"
+        val CLASS_RETROFIT_CLIENT = "${NS_TBOX}RetrofitClient"
+        val PROPERTY_HAS_PATH = "${NS_TBOX}hasPath"
+        val PROPERTY_HAS_HTTP_METHOD = "${NS_TBOX}hasHttpMethod"
     }
 
     override fun addToTBox() {
@@ -36,11 +37,9 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
     }
 
     override fun classify(
-        individualMethod: OntIndividual,
-        cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
+        visitor: JavaVisitor<ExecutionContext>,
     ): Boolean {
-        val model = individualMethod.model
         val methodAnnotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
         if (methodAnnotations.isEmpty()) {
             return false
@@ -52,12 +51,18 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
         val requestMappingMethodLevel =
             pathsAndMethods.first.map { any -> any as String }.toTypedArray()
         val httpMethods = pathsAndMethods.second
+        val callerMethodType = jMethodDeclaration.methodType
+        if (callerMethodType == null) {
+            return false
+        }
+        val individualMethod = model.createIndividualMethod(callerMethodType)
+        val classRetrofitClient = model.getOntClass(CLASS_RETROFIT_CLIENT)
         httpMethods.forEach { httpMethod ->
             val individualEndpoint =
                 model
                     .createIndividual(
-                        createABoxURI(httpMethod, *requestMappingMethodLevel),
-                        model.getOntClass(CLASS_RETROFIT_CLIENT),
+                        createABoxURI(classRetrofitClient,httpMethod, *requestMappingMethodLevel),
+                        classRetrofitClient,
                     )
                     .also {
                         it.addProperty(model.getDataProperty(PROPERTY_HAS_HTTP_METHOD), httpMethod)
@@ -74,7 +79,7 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
     }
 
     private fun extractPathsAndMethods(
-        annotationsAsMap: Map<String, Map<String, Array<Any?>>>
+        annotationsAsMap: Map<String, Map<String, Array<Any?>?>>
     ): Pair<Array<Any?>, Set<String>>? {
         return annotationsAsMap.keys.firstNotNullOfOrNull { annotation ->
             when (annotation) {

@@ -83,7 +83,7 @@ public class Microscope extends ScanningRecipe<MicroscopeService> {
     }
 
     @Override
-    public TreeVisitor<?, ExecutionContext> getScanner(MicroscopeService acc) {
+    public TreeVisitor<?, ExecutionContext> getScanner(MicroscopeService accumulator) {
         return new KotlinIsoVisitor<ExecutionContext>() {
 
             @Override
@@ -97,28 +97,33 @@ public class Microscope extends ScanningRecipe<MicroscopeService> {
             }
 
             @Override
-            public K.MethodDeclaration visitMethodDeclaration(K.MethodDeclaration methodDeclaration, ExecutionContext ctx) {
+            public J.VariableDeclarations.NamedVariable visitVariable(J.VariableDeclarations.NamedVariable variable, ExecutionContext executionContext) {
+                return super.visitVariable(variable, executionContext);
+            }
+
+            @Override
+            public J.NewClass visitNewClass(J.NewClass newClass, ExecutionContext executionContext) {
                 Cursor cursor = getCursor();
-                OntIndividual individualMethodDeclaration = acc.analyzeMethodDeclaration(methodDeclaration.getMethodDeclaration(), cursor);
-                getCursor().putMessage("methodDeclaration", individualMethodDeclaration);
+                OntIndividual individualSomething = accumulator.analyzeNewClass(newClass, cursor);
+                getCursor().putMessage("something", individualSomething);
+                return super.visitNewClass(newClass, executionContext);
+            }
+
+            @Override
+            public K.MethodDeclaration visitMethodDeclaration(K.MethodDeclaration methodDeclaration, ExecutionContext ctx) {
+                accumulator.analyzeMethodDeclaration(methodDeclaration.getMethodDeclaration(), this);
                 return super.visitMethodDeclaration(methodDeclaration, ctx);
             }
 
             @Override
             public J.MethodDeclaration visitMethodDeclaration(J.MethodDeclaration methodDeclaration, ExecutionContext ctx) {
-                Cursor cursor = getCursor();
-                OntIndividual individualMethodDeclaration = acc.analyzeMethodDeclaration(methodDeclaration, cursor);
-                getCursor().putMessage("methodDeclaration", individualMethodDeclaration);
+                accumulator.analyzeMethodDeclaration(methodDeclaration, this);
                 return super.visitMethodDeclaration(methodDeclaration, ctx);
             }
 
             @Override
             public J.MethodInvocation visitMethodInvocation(J.MethodInvocation methodInvocation, ExecutionContext ctx) {
-                Cursor cursor = getCursor();
-                OntIndividual individualMethodDeclaration = cursor.getNearestMessage("methodDeclaration");
-                if (individualMethodDeclaration != null) {
-                    acc.analyzeMethodInvocation(methodInvocation, cursor, individualMethodDeclaration);
-                }
+                accumulator.analyzeMethodInvocation(methodInvocation, this);
                 return super.visitMethodInvocation(methodInvocation, ctx);
             }
         };

@@ -2,11 +2,12 @@ package com.yourorg.classifiers.method
 
 import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.NS_TBOX
-import org.apache.jena.ontapi.model.OntIndividual
 import org.apache.jena.ontapi.model.OntModel
-import org.openrewrite.Cursor
+import org.openrewrite.ExecutionContext
+import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
 
+@Deprecated("delete, as it is not needed (event handler method declarations cannot be detected as such)")
 class EventHandlerMethodClassifier(model: OntModel) : AbstractMethodClassifier(model) {
     companion object {
         val CLASS_TOPIC = "$NS_TBOX#Topic"
@@ -23,10 +24,10 @@ class EventHandlerMethodClassifier(model: OntModel) : AbstractMethodClassifier(m
     }
 
     override fun classify(
-        individualMethod: OntIndividual,
-        cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
+        visitor: JavaVisitor<ExecutionContext>,
     ): Boolean {
+        val cursor = visitor.cursor
         return false // not yet implemented
     }
 }

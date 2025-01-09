@@ -1,8 +1,8 @@
 package com.yourorg.classifiers.method
 
-import org.apache.jena.ontapi.model.OntIndividual
 import org.apache.jena.ontapi.model.OntModel
-import org.openrewrite.Cursor
+import org.openrewrite.ExecutionContext
+import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
 
 abstract class AbstractMethodClassifier(val model: OntModel) {
@@ -13,8 +13,7 @@ abstract class AbstractMethodClassifier(val model: OntModel) {
     abstract fun addToTBox()
 
     abstract fun classify(
-        individualMethod: OntIndividual,
-        cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
+        visitor: JavaVisitor<ExecutionContext>
     ): Boolean
 }
