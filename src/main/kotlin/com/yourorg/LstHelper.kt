@@ -14,7 +14,10 @@ fun List<J.Annotation>.annotationMap(cursor: Cursor): Map<String, Map<String, Ar
     }
 }
 
-fun K.CompilationUnit.importMap(): Map<String, String> = this.imports.associate { it.qualid.simpleName to it.qualid.toString() }
+fun K.CompilationUnit.importMap(): Map<String, String> = this.imports.associate {
+    val fullyQualifiedName = "${it.qualid.target}.${it.qualid.simpleName}"
+    it.qualid.simpleName to fullyQualifiedName
+}
 
 fun List<Expression>.asMap(): Map<String, Array<Any?>?> {
     return this.mapNotNull { expression ->
