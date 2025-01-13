@@ -4,12 +4,13 @@ import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.NS_TBOX
 import com.yourorg.MicroscopeService.Companion.createABoxURI
 import com.yourorg.MicroscopeService.Companion.productOf
-import com.yourorg.asMapOfMaps
+import com.yourorg.annotationMap
 import com.yourorg.createIndividualMethod
 import org.apache.jena.ontapi.model.OntModel
 import org.openrewrite.ExecutionContext
 import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
+import org.openrewrite.kotlin.tree.K
 
 class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model) {
     companion object {
@@ -42,8 +43,11 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
         visitor: JavaVisitor<ExecutionContext>,
     ): Boolean {
         val cursor = visitor.cursor
-        val jClassDeclaration = cursor.firstEnclosing(J.ClassDeclaration::class.java)!!
-        val classAnnotations = jClassDeclaration.leadingAnnotations.asMapOfMaps()
+        val jClassDeclaration = cursor.firstEnclosing(J.ClassDeclaration::class.java) ?: cursor.firstEnclosing(K.ClassDeclaration::class.java)?.classDeclaration
+        if (jClassDeclaration == null) {
+            return false
+        }
+        val classAnnotations = jClassDeclaration.leadingAnnotations.annotationMap(cursor)
         if (!classAnnotations.containsKey("org.springframework.web.bind.annotation.RestController")) {
             return false
         }
@@ -51,7 +55,7 @@ class EndpointMethodClassifier(model: OntModel) : AbstractMethodClassifier(model
             classAnnotations["org.springframework.web.bind.annotation.RequestMapping"]!!["value"]
                 ?.map { any -> any as String }
                 ?.toTypedArray()
-        val methodAnnotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
+        val methodAnnotations = jMethodDeclaration.leadingAnnotations.annotationMap(cursor)
         if (methodAnnotations.isEmpty()) {
             return false
         }

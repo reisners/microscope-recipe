@@ -18,6 +18,10 @@ package com.yourorg
 import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.PROPERTY_HAS_FQCN
 import com.yourorg.MicroscopeService.Companion.PROPERTY_HAS_METHOD_NAME
+import com.yourorg.classifiers.method.EndpointMethodClassifier.Companion.CLASS_ENDPOINT
+import com.yourorg.classifiers.method.EndpointMethodClassifier.Companion.PROPERTY_HAS_ENDPOINT
+import com.yourorg.classifiers.method.EndpointMethodClassifier.Companion.PROPERTY_HAS_HTTP_METHOD
+import com.yourorg.classifiers.method.EndpointMethodClassifier.Companion.PROPERTY_HAS_PATH
 import org.apache.jena.ontapi.OntModelFactory
 import org.apache.jena.ontapi.OntSpecification
 import org.apache.jena.ontapi.model.OntClass
@@ -112,18 +116,23 @@ internal class MicroscopeTest : RewriteTest {
             org.openrewrite.kotlin.Assertions.kotlin(
                 """
                 package com.yourorg
-                
-                @org.springframework.web.bind.annotation.RestController
-                @org.springframework.web.bind.annotation.RequestMapping(["/v1", "/alternativePath"])
+                import org.springframework.web.bind.annotation.RestController
+                import org.springframework.web.bind.annotation.RequestMapping
+                import org.springframework.web.bind.annotation.DeleteMapping
+                import org.springframework.stereotype.Service
+                import org.springframework.stereotype.Repository
+
+                @RestController
+                @RequestMapping(["/v1", "/alternativePath"])
                 class MyController(val myService: MyService) {
-                    @org.springframework.web.bind.annotation.RequestMapping(value = "/x", method = org.springframework.web.bind.annotation.RequestMethod.GET)
+                    @RequestMapping(value = "/x", method = org.springframework.web.bind.annotation.RequestMethod.GET)
                     fun x(): List<MyEntity> = myService.doX()
 
-                    @org.springframework.web.bind.annotation.DeleteMapping("/x")
+                    @DeleteMapping("/x")
                     fun deleteX() = myService.doDeleteX()
                 }
                 
-                @org.springframework.stereotype.Service
+                @Service
                 class MyService(val myRepository: MyRepository) {
                     fun doX(): List<MyEntity> = myRepository.findAll()
                     fun doDeleteX() = myRepository.deleteAll()
@@ -133,7 +142,7 @@ internal class MicroscopeTest : RewriteTest {
                     var id: String
                 )
                 
-                @org.springframework.stereotype.Repository
+                @Repository
                 interface MyRepository {
                     fun findAll(): List<MyEntity>
                     fun deleteAll()
@@ -155,6 +164,23 @@ internal class MicroscopeTest : RewriteTest {
                 "com.yourorg.MyService.doX",
                 "com.yourorg.MyService.doDeleteX"
             ))
+        val propertyHttpMethod = model.getDataProperty(PROPERTY_HAS_HTTP_METHOD)
+        val propertyPath = model.getDataProperty(PROPERTY_HAS_PATH)
+        val individualEndpoints = model.listIndividualsWithClass(model.getOntClass(CLASS_ENDPOINT)).toList()
+        assertThat(individualEndpoints).hasSize(2)
+        assertThat(individualEndpoints.map { "${it.getProperty(propertyHttpMethod)?.`object`?.asLiteral()} ${it.getProperty(propertyPath)?.`object`?.asLiteral()}" }.toSet())
+            .isEqualTo(setOf(
+                "GET /v1/x",
+                "DELETE /v1/x",
+            ))
+        val endpointsByMethod = individualEndpoints.associateBy { it.getProperty(propertyHttpMethod)?.`object`?.asLiteral().toString() }
+        val propertyEndpoint = model.getDataProperty(PROPERTY_HAS_ENDPOINT)
+        val methodsGET = model.listSubjectsWithProperty(propertyEndpoint, endpointsByMethod["GET"]).toList()
+        val methodsDELETE = model.listSubjectsWithProperty(propertyEndpoint, endpointsByMethod["DELETE"]).toList()
+        assertThat(methodsGET).hasSize(1)
+        assertThat(methodsGET[0].getProperty(propertyMethodName)?.`object`?.asLiteral().toString()).isEqualTo("x")
+        assertThat(methodsDELETE).hasSize(1)
+        assertThat(methodsDELETE[0].getProperty(propertyMethodName)?.`object`?.asLiteral().toString()).isEqualTo("deleteX")
     }
 
     @Test

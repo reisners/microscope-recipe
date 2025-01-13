@@ -4,8 +4,8 @@ import org.apache.jena.ontapi.model.OntIndividual
 import org.apache.jena.ontapi.model.OntModel
 import org.openrewrite.Cursor
 import com.yourorg.MicroscopeService.Companion.createABoxURI
+import com.yourorg.annotationMap
 import com.yourorg.asMap
-import com.yourorg.asMapOfMaps
 import com.yourorg.classifiers.method.beanfactory.EventProcessessorConfigurationBFMClassifier.Companion.CLASS_CONFIG
 import com.yourorg.getRepository
 import org.openrewrite.java.tree.J
@@ -33,7 +33,7 @@ class EventProcessorConstructorClassifier(model: OntModel) : AbstractConstructor
         if (variableDeclarations == null) {
             return null
         }
-        val configurationQualifier = variableDeclarations.leadingAnnotations.asMapOfMaps()["org.springframework.beans.factory.annotation.Qualifier"]?.get("value")?.firstOrNull() as? String
+        val configurationQualifier = variableDeclarations.leadingAnnotations.annotationMap(cursor)["org.springframework.beans.factory.annotation.Qualifier"]?.get("value")?.firstOrNull() as? String
 
         val repository = cursor.getRepository()
         if (repository == null) {

@@ -1,14 +1,20 @@
 package com.yourorg
 
+import org.openrewrite.Cursor
 import org.openrewrite.java.tree.Expression
 import org.openrewrite.java.tree.J
 import org.openrewrite.kotlin.tree.K
 
-fun List<J.Annotation>.asMapOfMaps(): Map<String, Map<String, Array<Any?>?>> {
+
+fun List<J.Annotation>.annotationMap(cursor: Cursor): Map<String, Map<String, Array<Any?>?>> {
+    val importMap = cursor.firstEnclosing(K.CompilationUnit::class.java)?.importMap()
     return this.associate { it: J.Annotation ->
-        it.annotationType.toString() to (it.getArguments()?.asMap() ?: emptyMap())
+        val fullyQualifiedAnnotationName = importMap?.get(it.annotationType.toString()) ?: it.annotationType.toString()
+        fullyQualifiedAnnotationName to (it.getArguments()?.asMap() ?: emptyMap())
     }
 }
+
+fun K.CompilationUnit.importMap(): Map<String, String> = this.imports.associate { it.qualid.simpleName to it.qualid.toString() }
 
 fun List<Expression>.asMap(): Map<String, Array<Any?>?> {
     return this.mapNotNull { expression ->

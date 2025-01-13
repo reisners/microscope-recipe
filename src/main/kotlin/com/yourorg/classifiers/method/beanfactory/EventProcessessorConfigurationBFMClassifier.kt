@@ -3,9 +3,8 @@ package com.yourorg.classifiers.method.beanfactory
 import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.NS_TBOX
 import com.yourorg.MicroscopeService.Companion.createABoxURI
+import com.yourorg.annotationMap
 import com.yourorg.asMap
-import com.yourorg.asMapOfMaps
-import com.yourorg.classifiers.method.EndpointMethodClassifier.Companion.PROPERTY_HAS_ENDPOINT
 import com.yourorg.createIndividualMethod
 import org.apache.jena.ontapi.model.OntModel
 import org.openrewrite.Cursor
@@ -47,7 +46,7 @@ class EventProcessessorConfigurationBFMClassifier(model: OntModel) : AbstractBea
         if (!jMethodDeclaration.methodType.returnType.isAssignableFrom(PATTERN)) {
             return false
         }
-        val annotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
+        val annotations = jMethodDeclaration.leadingAnnotations.annotationMap(cursor)
         val qualifiers: List<String>? = annotations["org.springframework.context.annotation.Bean"]?.get("value")?.mapNotNull { it as String }
         if (qualifiers == null) {
             return false

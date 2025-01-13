@@ -3,7 +3,7 @@ package com.yourorg.classifiers.method
 import com.yourorg.MicroscopeService.Companion.CLASS_METHOD
 import com.yourorg.MicroscopeService.Companion.NS_TBOX
 import com.yourorg.MicroscopeService.Companion.createABoxURI
-import com.yourorg.asMapOfMaps
+import com.yourorg.annotationMap
 import com.yourorg.createIndividualMethod
 import org.apache.jena.ontapi.model.OntModel
 import org.openrewrite.ExecutionContext
@@ -40,7 +40,8 @@ class RetrofitClientMethodClassifier(model: OntModel) : AbstractMethodClassifier
         jMethodDeclaration: J.MethodDeclaration,
         visitor: JavaVisitor<ExecutionContext>,
     ): Boolean {
-        val methodAnnotations = jMethodDeclaration.leadingAnnotations.asMapOfMaps()
+        val cursor = visitor.cursor
+        val methodAnnotations = jMethodDeclaration.leadingAnnotations.annotationMap(cursor)
         if (methodAnnotations.isEmpty()) {
             return false
         }
