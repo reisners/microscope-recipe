@@ -85,14 +85,20 @@ public class Microscope extends ScanningRecipe<MicroscopeService> {
     @Override
     public TreeVisitor<?, ExecutionContext> getScanner(MicroscopeService accumulator) {
         return new KotlinIsoVisitor<ExecutionContext>() {
+            @Override
+            public K.CompilationUnit visitCompilationUnit(K.CompilationUnit cu, ExecutionContext executionContext) {
+                return super.visitCompilationUnit(cu, executionContext);
+            }
 
             @Override
             public K.ClassDeclaration visitClassDeclaration(K.ClassDeclaration classDecl, ExecutionContext ctx) {
+                System.out.println("KCD %s".formatted(classDecl.getClassDeclaration().getName().getSimpleName()));
                 return super.visitClassDeclaration(classDecl, ctx);
             }
 
             @Override
             public J.ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
+                System.out.println("JCD %s".formatted(classDecl.getName().getSimpleName()));
                 return super.visitClassDeclaration(classDecl, ctx);
             }
 
