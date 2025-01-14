@@ -286,6 +286,50 @@ internal class MicroscopeTest : RewriteTest {
         )
     }
 
+    @Test
+    fun config() {
+        rewriteRun(
+            org.openrewrite.kotlin.Assertions.kotlin(
+                """
+                    package com.bolindadigital.users.api
+                    
+                    import com.borrowbox.gearbox.sqs.eventprocessor.domain.EventProcessorConfiguration
+                    import com.borrowbox.gearbox.sqs.eventprocessor.processor.EventProcessor
+                    import com.fasterxml.jackson.databind.ObjectMapper
+                    import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
+                    import org.springframework.beans.factory.annotation.Qualifier
+                    import org.springframework.beans.factory.annotation.Value
+                    import org.springframework.context.annotation.Bean
+                    import org.springframework.context.annotation.Configuration
+                    import software.amazon.awssdk.regions.Region
+                    import software.amazon.awssdk.services.sqs.SqsClient
+                    
+                    @Configuration
+                    class TestConfiguration {
+                    
+                        @Value("\${'$'}{aws.sqs.gearbox.enabled}") private var enabled: Boolean = false
+                    
+                        @Value("\${'$'}{cloud.aws.region.static}") private lateinit var region: String
+                    
+                        @Bean(value = ["territoryEventConfig"])
+                        fun territoryEventConfiguration(
+                            @Value("\${'$'}{sqs.receiver.territory-events.queue}") queueUrl: String
+                        ) = EventProcessorConfiguration(enabled = enabled, queueUrl = queueUrl, waitTimeInSeconds = 10)
+                    
+                        @Bean(value = ["territoryGroupEventConfig"])
+                        fun territoryGroupEventConfiguration(
+                            @Value("\${'$'}{sqs.receiver.territory-group-events.queue}") queueUrl: String
+                        ) = EventProcessorConfiguration(enabled = enabled, queueUrl = queueUrl, waitTimeInSeconds = 10)
+                    
+                        @Bean fun sqsClient(): SqsClient = SqsClient.builder().region(Region.of(region)).build()                    
+                    }
+                """
+                    .trimIndent()
+            )
+        )
+    }
+
+
 }
 
 private fun List<Resource>.extractDataProperty(dataProperty: OntDataProperty?): List<Literal?> =
