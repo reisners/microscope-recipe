@@ -18,6 +18,9 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <awssdk.version>2.29.20</awssdk.version>
         <borrowbox-gearbox.version>5.0.1</borrowbox-gearbox.version>
+
+        <amazonaws.version>1.12.341</amazonaws.version>
+        <awsspringcloud.version>2.4.4</awsspringcloud.version>
     </properties>
 
     <repositories>
@@ -119,6 +122,13 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
                 <version>${awssdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.3.5</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -307,6 +317,44 @@
             <groupId>com.borrowbox.gearbox</groupId>
             <artifactId>gearbox-events</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>${amazonaws.version}</version>
+        </dependency>
+        <!-- sts v2 for gearbox sqs eventprocessor -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>${amazonaws.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-autoconfigure</artifactId>
+            <version>${awsspringcloud.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-messaging</artifactId>
+            <version>${awsspringcloud.version}</version>
+        </dependency>
+
     </dependencies>
 
 </project>
