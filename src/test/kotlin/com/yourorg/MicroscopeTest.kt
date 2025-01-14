@@ -51,6 +51,7 @@ internal class MicroscopeTest : RewriteTest {
                         "spring-core",
                         "spring-web",
                         "spring-context",
+                        "spring-beans",
                         "gearbox-commons",
                         "gearbox-events",
                         "gearbox-retrofit-core",
@@ -59,6 +60,11 @@ internal class MicroscopeTest : RewriteTest {
                         "jackson-databind",
                         "jackson-core",
                         "jackson-module-kotlin",
+                        "sqs",
+                        "aws-core",
+                        "sdk-core",
+                        "regions",
+                        "utils",
                     )
             )
     }
