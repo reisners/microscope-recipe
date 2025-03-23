@@ -19,6 +19,7 @@ import org.openrewrite.java.JavaVisitor
 import org.openrewrite.java.tree.J
 import org.openrewrite.java.tree.JavaType
 import org.openrewrite.kotlin.tree.K
+import java.io.File
 import kotlin.io.path.name
 
 class MicroscopeService {

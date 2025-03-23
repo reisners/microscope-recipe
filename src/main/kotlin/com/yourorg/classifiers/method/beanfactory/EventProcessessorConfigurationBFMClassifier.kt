@@ -43,7 +43,7 @@ class EventProcessessorConfigurationBFMClassifier(model: OntModel) : AbstractBea
         cursor: Cursor,
         jMethodDeclaration: J.MethodDeclaration,
     ): Boolean {
-        if (!jMethodDeclaration.methodType.returnType.isAssignableFrom(PATTERN)) {
+        if (jMethodDeclaration.methodType?.returnType?.isAssignableFrom(PATTERN) == false) {
             return false
         }
         val annotations = jMethodDeclaration.leadingAnnotations.annotationMap(cursor)
@@ -71,7 +71,7 @@ class EventProcessessorConfigurationBFMClassifier(model: OntModel) : AbstractBea
     }
 
     private fun extractQueueUrl(jMethodDeclaration: J.MethodDeclaration): String {
-        val returnStatement = jMethodDeclaration.body.statements.first { s -> s is K.Return } as K.Return
+        val returnStatement = jMethodDeclaration.body?.statements?.first { s -> s is K.Return } as K.Return
         val newClass = returnStatement.expression.expression as J.NewClass
         val arguments = newClass.arguments.asMap()
         val queueUrl = arguments["queueUrl"]!![0] as String

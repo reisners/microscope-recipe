@@ -19,17 +19,18 @@ class EventProcessorConstructorClassifier(model: OntModel) : AbstractConstructor
         cursor: Cursor,
         constructor: J.NewClass
     ): OntIndividual? {
-        if (constructor.constructorType.declaringType.fullyQualifiedName != "com.borrowbox.gearbox.sqs.eventprocessor.processor.EventProcessor") {
+        if (constructor.constructorType?.declaringType?.fullyQualifiedName != "com.borrowbox.gearbox.sqs.eventprocessor.processor.EventProcessor") {
             return null
         }
         val configurationIdentifier = extractConfigurationIdentifier(constructor)
         val classDeclaration = cursor.firstEnclosing<J.ClassDeclaration>(J.ClassDeclaration::class.java)
         //TODO: find constructor parameter named configurationIdentifier and extract @Qualifier value
-        val constructorAsMethodDeclaration = classDeclaration.body.statements.firstOrNull { it is J.MethodDeclaration && it.methodType.isConstructor } as? J.MethodDeclaration
+        val constructorAsMethodDeclaration = classDeclaration?.body?.statements?.firstOrNull { it is J.MethodDeclaration && it.methodType?.isConstructor == true } as? J.MethodDeclaration
         if (constructorAsMethodDeclaration == null) {
             return null
         }
-        val variableDeclarations = constructorAsMethodDeclaration.parameters.filter { it is J.VariableDeclarations && it.variables.size == 1 && it.variables[0].simpleName == configurationIdentifier }.firstOrNull() as? J.VariableDeclarations
+        val variableDeclarations =
+            constructorAsMethodDeclaration.parameters.firstOrNull { it is J.VariableDeclarations && it.variables.size == 1 && it.variables[0].simpleName == configurationIdentifier } as? J.VariableDeclarations
         if (variableDeclarations == null) {
             return null
         }
